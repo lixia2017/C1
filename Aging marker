@@ -1,0 +1,560 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[10]:
+
+
+# D:\OneDrive - International Campus, Zhejiang University\桌面\8273102\tabula-muris-senis-bbknn-processed-official-annotations.h5ad
+
+# 生成的图片储存会自己创建一个figures文件夹
+
+# 导入所有数据并整合，去批次效应
+# 载入包
+import numpy as np
+import pandas as pd
+import scanpy as sc
+import numpy as np
+import seaborn as sb
+import matplotlib.pyplot as plt
+import os
+import time
+import sys
+import scipy.stats as stats
+from scipy.stats import kstest
+import random
+
+# 设置
+sc.settings.verbosity = 3 # verbosity 的取值表示测试结果显示的详细程度，数字越大越详细
+sc.logging.print_versions() # 输出版本号
+sc.settings.set_figure_params(dpi=80) # set_figure_params 设置图片的分辨率/大小以及其他样式
+
+os.getcwd()  ##查看当前路径
+os.chdir('D:/OneDrive - International Campus, Zhejiang University/桌面/8273102') #修改路径
+os.getcwd() 
+Path = r'D:/OneDrive - International Campus, Zhejiang University/桌面/8273102'
+
+
+# In[11]:
+
+
+adata = sc.read_h5ad('tabula-muris-senis-droplet-processed-official-annotations.h5ad')
+
+# adata.obs.tissue
+
+# umap
+# sc.pp.neighbors(adata, n_neighbors=10, use_rep='X')
+
+# sc.pl.umap(adata, color=['tissue'],legend_loc="on data",legend_fontsize=5,save='_tissue.png')
+
+# adata_t_b_cell = adata[np.array(adata.obs.cell_ontology_class == "T cell) | np.array(adata.obs.cell_ontology_class == "B cell)]
+
+# sc.pl.umap(adata, color=['tissue'],save='_tissue.png')
+
+
+# In[23]:
+
+
+# adata = adata[np.array(adata.obs.tissue == "Lung")]
+# adata_t_b_cell = adata[np.array(adata.obs.cell_ontology_class == "T cell") | np.array(adata.obs.cell_ontology_class == "B cell")]
+
+# Senescence-related marker Cdkn2a (p16)
+
+def xyplot(data,x,y,i):
+    gene_x = data.X[:,list(data.var_names).index(x)]
+    gene_y = data.X[:,list(data.var_names).index(y)]
+    gene_x = gene_x.toarray()
+    gene_y = gene_y.toarray()
+    fig,ax=plt.subplots()
+    ax.scatter(gene_x, gene_y, s=i)
+        
+    a = gene_x.flatten()
+    b = gene_y.flatten()
+        
+    xlist = pd.Series(a) #利用Series将列表转换成新的、pandas可处理的数据
+    ylist = pd.Series(b)
+        
+    p = xlist.corr(ylist)
+    print('The correlation between',x, 'and',y,'is',p,'.')
+    
+    # r,p = stats.pearsonr(gene_x, gene_y)
+
+
+xyplot(adata,'Dpp4','Cdkn2a',1)
+
+
+# In[7]:
+
+
+
+
+
+# In[10]:
+
+
+sc.pl.umap(adata, color=['cell_ontology_class'],save='_cell_ontology_class.png')
+
+
+# In[ ]:
+
+
+adata_aged_cell = adata[np.array(adata.obs.cell_ontology_class == "T cell) | np.array(adata.obs.cell_ontology_class == "B cell)]
+
+
+# In[9]:
+
+
+adata_aged_cell = adata[adata.obs.cell_ontology_class == "T cell]
+
+
+# In[15]:
+
+
+adata.obs
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[16]:
+
+
+
+
+
+# In[17]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[20]:
+
+
+
+
+
+# In[27]:
+
+
+
+    
+xyplot('Dpp4','Trp53',1)
+
+
+# In[24]:
+
+
+
+
+
+# In[25]:
+
+
+
+
+
+# In[11]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+'''
+# 自动创建文件夹
+dirs = os.listdir()
+names = np.unique(list(map(lambda x: x.split('_')[0], dirs)))
+for i in names:
+    os.mkdir(i)
+
+# 自动归类文件
+for i in dirs:
+    if 'contig' not in i:
+        os.replace(i, os.path.join(i.split('_')[0], i))
+
+
+# 自动改文件名成三个标准格式
+dirs = os.listdir()
+
+for i in dirs: 
+    subdirs = os.listdir(i)
+    for j in range(len(subdirs)):
+        #返回单个的文件名
+        OldName = subdirs[j]
+        if OldName.endswith('matrix.tsv.gz'):
+            os.rename(os.path.join(i,OldName),os.path.join(i,'matrix.mtx.gz'))
+            
+        if OldName.endswith('barcodes.tsv.gz'):
+            os.rename(os.path.join(i,OldName),os.path.join(i,'barcodes.tsv.gz'))
+        
+        if OldName.endswith('features.tsv.gz'):
+            os.rename(os.path.join(i,OldName),os.path.join(i,'features.tsv.gz'))
+            
+        if OldName.endswith('matrix.mtx.gz'):
+            os.rename(os.path.join(i,OldName),os.path.join(i,'matrix.mtx.gz'))
+            
+        else:
+            pass
+
+#载入文件
+dirs = os.listdir()
+
+Data = []
+
+for i in dirs: 
+    subdirs = os.listdir(i)
+    for j in range(len(subdirs)):
+        if subdirs[j].endswith('matrix.mtx.gz'):
+            adata = sc.read_10x_mtx(
+            i, #mtx 文件目录
+            var_names='gene_symbols', #使用gene_symbols 作为变量名
+            cache=True) #写入缓存，可以更快的读取文件
+            adata.obs['sample_name'] = i
+            Data.append(adata)
+            
+# merge
+adata = sc.concat(Data,merge = "same")
+
+# 然后根据sample_name把barcode重命名
+barcode = list(map(lambda x: x[0] + '-' + x[1], zip(adata.obs["sample_name"], adata.obs.index)))
+adata.obs.index = barcode
+
+adata.obs.index
+
+#预处理
+#显示在所有细胞中在每个单细胞中产生最高计数分数的基因
+sc.pl.highest_expr_genes(adata,n_top=20,save='.png')
+
+#过滤低质量细胞样本
+#过滤在少于三个细胞中表达，或一个细胞中表达少于200个基因的细胞样本
+sc.pp.filter_cells(adata,min_genes=200)
+sc.pp.filter_genes(adata,min_cells=3)
+
+#过滤包含线粒体基因和表达基因过多的细胞
+#线粒体基因的转录本比单个转录物分子大，并且不太可能通过细胞膜逃逸。因此，检测出高比例的线粒体基因，表明细胞质量差
+#表达基因过多可能是由于一个油滴包裹多个细胞，从而检测出比正常检测要多的基因数，因此要过滤这些细胞
+adata.var['mt'] = adata.var_names.str.startswith('MT-') #标记线粒体基因为mt
+sc.pp.calculate_qc_metrics(adata,qc_vars=['mt'],percent_top=None,log1p=False,inplace=True)
+#生成的三张小提琴图代表：表达基因的数量，每个细胞包含的表达量，线粒体基因表达量的百分比。
+sc.pl.violin(adata, ['n_genes_by_counts','total_counts','pct_counts_mt'],jitter=0.4,multi_panel=True)
+
+#过滤
+#可视化 散点图
+#每个细胞包含的表达量与其中线粒体基因表达量的百分比之间的关系
+sc.pl.scatter(adata,x='total_counts',y='pct_counts_mt')
+#每个细胞包含的表达量与其表达基因的数量之间的关系
+sc.pl.scatter(adata,x='total_counts',y='n_genes_by_counts')
+
+#过滤线粒体基因表达过多的细胞
+adata = adata[adata.obs.pct_counts_mt < 5,:]
+#过滤基因表达总数过少和过多的细胞
+adata = adata[adata.obs.n_genes_by_counts < 2500,:]
+adata = adata[adata.obs.n_genes_by_counts > 500,:]
+
+# 归一化，使得不同细胞样本间可比
+# normalize_total函数主要做了2件事情：1）把最大值压缩到target_sum之内；2）每一行做归一化处理。
+sc.pp.normalize_total(adata, target_sum=1e4)
+sc.pp.log1p(adata)
+# 除了简单的normalize_total，归一化还有其他方法，比如批标准化 (Batch Normalization)、层标准化 (Layer Normalization)、组标准化 (Group Normalization)
+
+# 识别高度可变的基因
+sc.pp.highly_variable_genes(adata, min_mean=0.0125, max_mean=3, min_disp=0.5)
+sc.pl.highly_variable_genes(adata, save='.png')
+
+# 获取只有特异性基因的数据集
+adata = adata[:, adata.var.highly_variable]
+
+# 回归每个细胞的总计数和表达的线粒体基因的百分比的影响
+sc.pp.regress_out(adata, ['total_counts', 'pct_counts_mt'])
+# 将每个基因缩放到单位方差。阈值超过标准偏差 10
+sc.pp.scale(adata, max_value=10)
+
+# PCA 主成分分析 Principal component analysis
+# 通过PCA来降低数据的维数，可以对数据进行去噪并揭示不同分群的主因素
+# 绘制 PCA 图
+sc.tl.pca(adata, svd_solver='arpack')# svd_solver 指定奇异值分解 SVD 的方法
+sc.pl.pca(adata, color='CST3', save='.png')
+
+#检查单个 PC 对数据总方差的贡献，这可以提供给我们应该考虑多少个 PC 以计算细胞的邻域关系的信息，例如用于后续的聚类函数 sc.tl.louvain() 或 tSNE 聚类 sc.tl.tsne()
+sc.pl.pca_variance_ratio(adata, log=True, save = '.png')
+
+# umap
+# sc.pp.neighbors(adata, n_neighbors=10, use_rep='X')
+# sc.tl.umap(adata)
+# sc.pl.umap(adata, color=['sample_name'], save='_sample_name.png')
+
+# t-SNE
+# sc.tl.tsne(adata)
+# sc.pl.tsne(adata, color=['sample_name'], save='_sample_name.png')
+
+# 查找Marker基因的步骤如下：
+# 进行无监督聚类，例如Leiden；
+# 根据聚类的结果，查找聚类间差异最大的基因作为候选Marker基因；
+# 根据已知的细胞类型Marker基因和候选Marker基因，给聚类分配细胞类型名称。
+
+# Leiden聚类
+sc.pp.neighbors(adata, n_neighbors=10, n_pcs=40)
+sc.tl.leiden(adata) 
+
+#使用leiden进行聚类，注意安装对应的python包，conda install -c conda-forge leidenalg ，当然也可使用其他的聚类算法，如louvain，sc.tl.louvain(data),sc.pl.umap(adata, color=['louvain'])，比较了一下，聚类结果差异不大
+sc.tl.umap(adata)
+sc.pl.umap(adata, color=['leiden'], save='_leiden.png')
+
+
+adata.write('results_file.h5ad')
+
+# 进行批次处理
+# ComBat
+sc.pp.combat(adata, key='sample_name')
+sc.pp.neighbors(adata)
+sc.tl.umap(adata)
+sc.pl.umap(adata, color=['leiden'], legend_fontsize=8, save='_ComBat_leiden.png')
+
+#tSNE
+# sc.tl.tsne(adata)
+# sc.pl.tsne(adata, color=['leiden'], legend_fontsize=8, save='_ComBat_leiden.png')
+
+# 通过t-test计算差异表达
+sc.tl.rank_genes_groups(adata, 'leiden', method='t-test')
+sc.pl.rank_genes_groups(adata, n_genes=25, sharey=False, save="de_t_test.png")
+
+# 保存这次的数据结果
+adata.write('results_file.h5ad')
+
+# 通过wilcoxon计算差异表达
+# sc.tl.rank_genes_groups(adata, 'leiden', method='wilcoxon')
+# sc.pl.rank_genes_groups(adata, n_genes=25, sharey=False, save="de_wilcoxon.png")
+
+# 通过logreg计算差异表达
+# sc.tl.rank_genes_groups(adata, 'leiden', method='logreg')
+# sc.pl.rank_genes_groups(adata, n_genes=25, sharey=False, save="de_logreg.png")
+
+# Method must be one of {'t-test', 'wilcoxon', 'logreg', 't-test_overestim_var'}.
+
+# 通过limma计算差异表达
+# sc.tl.rank_genes_groups(adata, 'leiden', method='limma')
+# sc.pl.rank_genes_groups(adata, n_genes=25, sharey=False, save="de_logreg.png")
+
+# 使用 差异分析测试结果重新加载已保存的对象
+# adata = sc.read('results_file.h5ad')
+
+# 两组之间比较
+# sc.tl.rank_genes_groups(adata, 'leiden', groups=['0'], reference='1', method='wilcoxon')
+# sc.pl.rank_genes_groups(adata, groups=['0'], n_genes=20)
+
+
+# 单独一组画小提琴图与其他组差异分析
+# sc.pl.rank_genes_groups_violin(adata, groups='0', n_genes=8)
+
+# 跨类群比较基因
+# sc.pl.violin(adata, ['CST3', 'NKG7', 'PPBP'], groupby='leiden')
+
+# 气泡图显示差异基因
+# sc.pl.dotplot(adata, marker_genes, groupby='leiden');
+
+# 小提琴图显示
+# sc.pl.stacked_violin(adata, marker_genes, groupby='leiden', rotation=90);
+
+# 导出数据子集
+# 导出聚类数据
+# adata.obs[['n_counts', 'louvain_groups']].to_csv('./write/pbmc3k_corrected_louvain_groups.csv')
+# 导出PCA数据
+# adata.obsm.to_df()[['X_pca1', 'X_pca2']].to_csv('./write/pbmc3k_corrected_X_pca.csv')
+
+# 细胞类型标注
+new_cluster_names = [
+    'CD4 T',
+    'CD14 Monocytes',
+    'B',
+    'CD8 T',
+    'FCGR3A Monocytes',
+    'NK',
+    'Dendritic',
+    'Megakaryocytes']
+adata.rename_categories('leiden', new_cluster_names)
+sc.pl.umap(adata, color='leiden', legend_loc='on data', title='', frameon=False, save='_pbmc3k_annotation.png')
+
+sc.external.pp.harmony_integrate(adata, key='batch')
+sc.pp.neighbors(adata)
+sc.tl.umap(adata)
+sc.pl.umap(adata, color=['sample_name'], save='_sample_name.png')
+
+# 进行数据合并
+sc.tl.ingest(adata_pbmc68k, adata_pbmc3k, obs='louvain')
+sc.pl.umap(adata_pbmc68k, color=['louvain', 'bulk_labels'], wspace=0.5, legend_fontsize=8, save='_pbmc68k_louvain_label.png')
+
+adata_concat = adata_pbmc3k.concatenate(adata_pbmc68k, batch_categories=['PBMC3K', 'PBMC68K'])
+adata_concat.obs.louvain = adata_concat.obs.louvain.astype('category')
+adata_concat.obs.louvain.cat.reorder_categories(adata_pbmc3k.obs.louvain.cat.categories, inplace=True)  
+
+# 进行批次处理
+# pip install harmonypy
+sc.tl.pca(adata_concat)
+sc.external.pp.harmony_integrate(adata_concat, key='batch')
+sc.pp.neighbors(adata_concat)
+sc.tl.umap(adata_concat)
+sc.pl.umap(adata_concat, color=['batch', 'louvain'], legend_fontsize=8, save='_pbmc68k_louvain_label_harmony.png')
+
+# Louvain聚类
+# pip install scanpy[louvain]==1.8.2
+sc.tl.louvain(adata)
+
+sc.pl.umap(adata, color=['louvain'], save='_louvain.png')
+
+# 根据聚类结果，找出代表该类的标志基因
+sc.tl.rank_genes_groups(adata, 'leiden', method='t-test')
+sc.pl.rank_genes_groups(adata, n_genes=25, sharey=False)
+
+# 细胞类型标注
+new_cluster_names = [
+    'CD4 T',
+    'CD14 Monocytes',
+    'B',
+    'CD8 T',
+    'FCGR3A Monocytes',
+    'NK',
+    'Dendritic',
+    'Megakaryocytes']
+adata.rename_categories('leiden', new_cluster_names)
+sc.pl.umap(adata, color='leiden', legend_loc='on data', title='', frameon=False, save='_pbmc3k_annotation.png')
+
+#目前还没有计算出各个细胞类群，下面进行聚类
+#Leiden 图聚类
+# 计算 sc.tl.leiden(adata)
+# 绘制 sc.pl.umap(adata, color=['leiden'])
+
+#检索标记基因
+#先计算每个leiden分群中高度差异基因的排名，取排名前25的基因
+#默认使用AnnData的.raw属性
+#最简单和最快的方法是t检验
+sc.tl.rank_genes_groups(adata, 'leiden', method='t-test')
+sc.pl.rank_genes_groups(adata, n_genes=25, sharey=False)
+
+#Wilcoxon rank-sum
+#Wilcoxon rank-sum (Mann-Whitney-U)检验的结果非常相似，其他差异分析的包如MAST, limma, DESeq2 和diffxpy
+sc.tl.rank_genes_groups(adata, 'leiden', method='wilcoxon')
+sc.pl.rank_genes_groups(adata, n_genes=25, sharey=False)
+
+# 保存这次的数据结果
+adata.write(results_file)
+
+#逻辑回归
+sc.tl.rank_genes_groups(adata, 'leiden', method='logreg')
+sc.pl.rank_genes_groups(adata, n_genes=25, sharey=False)
+#使用逻辑回归对基因进行排名，这里使用多变量方法，而传统的差异测试是单变量
+
+#载入数据
+# 使用 Wilcoxon Rank-Sum 测试结果重新加载已保存的对象
+adata = sc.read(results_file)
+
+#获取聚类分组和分数
+pd.DataFrame(adata.uns['rank_genes_groups']['names']).head(5)
+adata.uns['rank_genes_groups'].keys()
+#dict_keys(['logfoldchanges', 'names', 'params', 'pvals', 'pvals_adj', 'scores'])
+result = adata.uns['rank_genes_groups']
+
+groups = result['names'].dtype.names
+pd.DataFrame(
+    {group + '_' + key[:1]: result[key][group]
+    for group in groups for key in ['names', 'pvals']}).head(5)
+
+res = pd.DataFrame({group + '_' + key: result[key][group]    for group in groups for key in ['names', 'pvals','logfoldchanges','pvals_adj','scores']})
+res.to_csv("dif.csv") #基因差异情况输出到本地保存
+
+#Group1和Group2比较，进行差异分析
+###sc.tl.rank_genes_groups(adata, 'leiden', groups=['0'], reference='1', method='wilcoxon')
+###sc.pl.rank_genes_groups(adata, groups=['0'], n_genes=20)
+###sc.pl.rank_genes_groups_violin(adata, groups='0', n_genes=8)
+
+#Group0与其余组的比较进行差异分析
+adata = sc.read(results_file)
+sc.pl.rank_genes_groups_violin(adata, groups='0', n_genes=8)
+
+#跨类群比较基因
+sc.pl.violin(adata, ['CST3', 'NKG7', 'PPBP'], groupby='leiden')
+#根据已知的标记基因，定义一个标记基因列表供以后参考
+marker_genes = ['IL7R', 'CD14', 'LYZ',  'MS4A1', 'CD8A', 'CD8B', 'FCGR3A', 'MS4A7','GNLY', 'NKG7', 'FCER1A', 'CST3', 'PPBP']
+
+#根据已知的细胞标记，注释细胞类型
+new_cluster_names = ['CD4 T', 'CD14 Monocytes','B', 'CD8 T','NK', 'FCGR3A Monocytes','Dendritic', 'Megakaryocytes']
+
+###adata.rename_categories('leiden', new_cluster_names)
+
+sc.pl.umap(adata, color='leiden', legend_loc='on data', title='', frameon=True)
+plt.savefig("umap_celltype.pdf")
+ax = sc.pl.dotplot(adata, marker_genes, groupby='leiden')
+plt.savefig("gene_Dot_celltype.pdf")
+ax = sc.pl.stacked_violin(adata, marker_genes, groupby='leiden', rotation=90)
+plt.savefig("gene_Vio_celltype.pdf")
+
+sc.pl.umap(adata, color='leiden', legend_loc='on data', title='', frameon=False, save='.pdf')
+#可视化每个类群的标记基因
+#气泡图显示
+sc.pl.dotplot(adata, marker_genes, groupby='leiden');
+#小提琴图显示
+sc.pl.stacked_violin(adata, marker_genes, groupby='leiden', rotation=90);
+#保存
+#保持压缩文件
+adata.write(results_file, compression='gzip')
+#保存为h5ad数据
+adata.raw.to_adata().write('pbmc3k_withoutX.h5ad')
+#读取使用 
+adata = sc.read_h5ad(’pbmc3k_withoutX.h5ad’)
+#导出数据子集
+# 导出聚类数据
+###adata.obs[['n_counts', 'louvain_groups']].to_csv('pbmc3k_corrected_louvain_groups.csv')
+# 导出PCA数据
+adata.obsm.to_df()[['X_pca1', 'X_pca2']].to_csv('pbmc3k_corrected_X_pca.csv')
+
+# 进行数据合并
+sc.tl.ingest(adata_pbmc68k, adata_pbmc3k, obs='louvain')
+sc.pl.umap(adata_pbmc68k, color=['louvain', 'bulk_labels'], wspace=0.5, legend_fontsize=8, save='_pbmc68k_louvain_label.png')
+
+adata_concat = adata_pbmc3k.concatenate(adata_pbmc68k, batch_categories=['PBMC3K', 'PBMC68K'])
+adata_concat.obs.louvain = adata_concat.obs.louvain.astype('category')
+adata_concat.obs.louvain.cat.reorder_categories(adata_pbmc3k.obs.louvain.cat.categories, inplace=True)  # fix category ordering
+
+# 进行批次处理
+# ComBat
+sc.tl.pca(adata_concat)
+sc.pp.combat(adata_concat, key='batch')
+sc.pp.neighbors(adata_concat)
+sc.tl.umap(adata_concat)
+sc.pl.umap(adata_concat, color=['batch', 'louvain'], legend_fontsize=8, save='_pbmc68k_louvain_label_combat.png')
+'''
+
